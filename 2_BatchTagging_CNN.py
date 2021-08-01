@@ -2,10 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
-### Avoid certificat error (source: https://stackoverflow.com/questions/27835619/urllib-and-ssl-certificate-verify-failed-error)
-import requests
 
-requests.packages.urllib3.disable_warnings()
 
 from keras.applications import inception_resnet_v2
 
@@ -19,37 +16,16 @@ import fnmatch
 
 from shutil import copyfile
 
-
-
-# only mac
-# import os
-# os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
-# from tensorflow.python.keras import backend as k
-
-
-home_path = '/Users/seo-b/'
-home_path = '/home/alan/'
-default_path = home_path + 'Dropbox/KIT/FlickrEU/deepGreen'
-
-
-
-#!export HIP_VISIBLE_DEVICES=0,1 #  For 2 GPU training
-# os.environ['HIP_VISIBLE_DEVICES'] = '0,1'
-os.environ['HIP_VISIBLE_DEVICES'] = '1'
+home_path = '/home/username/'
+default_path = home_path + 'git/recCNNize'
 
 # Seattle Middle Fork
 model_json = "Model/InceptionResnetV2_retrain_Seattle_architecture_dropout0.3.json"
 
 dataname = "MiddleFork"
-photo_path_base = home_path + 'Dropbox/KIT/FlickrEU/Seattle/Seattle_TaggedData_BigSize/All images/MiddleFork_AllPhotos/' # Middle Fork
+photo_path_base = home_path + 'All images/Photos/' # Middle Fork
 
-#dataname = "MountainLoop"
-#photo_path_base = home_path + 'Dropbox/KIT/FlickrEU/Seattle/Seattle_TaggedData_BigSize/All images/MountainLoop_AllPhotos/' # Mountain Loop
-
-out_path_base = "/DATA10TB/FlickrSeattle_Tagging_Feb2021/"
-# out_path_base = "/SSDSATA1TB/FlickrTagging/"
-#out_path_base = home_path + "Downloads/FlickrTagging/"
+out_path_base = home_path + "ModelOutput"
 
 
 # Class #0 = backpacking
@@ -57,27 +33,24 @@ out_path_base = "/DATA10TB/FlickrSeattle_Tagging_Feb2021/"
 # Class #2 = boating
 # Class #3 = camping
 # Class #4 = fishing
-# Class #5 = flooding
-# Class #6 = hiking
-# Class #7 = horseriding
-# Class #8 = mtn_biking
-# Class #9 = noactivity
-# Class #10 = otheractivities
-# Class #11 = pplnoactivity
-# Class #12 = rock climbing
-# Class #13 = swimming
-# Class #14 = trailrunning
+# Class #5 = hiking
+# Class #6 = horseriding
+# Class #7 = mtn_biking
+# Class #8 = noactivity
+# Class #9 = otheractivities
+# Class #10 = pplnoactivity
+# Class #11 = rock climbing
+# Class #12 = swimming
+# Class #13 = trailrunning
 
-classes = ["backpacking", "birdwatching", "boating", "camping", "fishing", "flooding", "hiking", "horseriding",
+classes = ["backpacking", "birdwatching", "boating", "camping", "fishing", "hiking", "horseriding",
            "mtn_biking", "noactivity", "otheractivities", "pplnoactivity", "rock climbing", "swimming",
            "trailrunning"]
 
 
 modelname = "InceptionResnetV2_dropout30_noweighting"
-trainedweights_name = "../Seattle/Seattle_TaggedData_BigSize/ModelAndTrained weights/InceptionResnetV2_Seattle_retrain_instagram_15classes_Okt2019_val_acc0.88.h5"
+trainedweights_name = "TrainedWeights/InceptionResnetV2_Seattle_retrain_14classes_Nonweighted_val_acc0.88.h5"
 
-#modelname = "InceptionResnetV2_dropout30_weighting"
-#trainedweights_name = "../Seattle/Seattle_TaggedData_BigSize/ModelAndTrained weights/InceptionResnetV2_Seattle_retrain_instagram_15classes_Weighted_Dec2020_val_acc0.87_redone_for_traininghistory.h5"
 
 os.chdir(default_path)
 
@@ -93,15 +66,6 @@ top = 10  # print top-n classes
 
 
 classes_arr = np.array(classes)
-# # Imagenet class labels
-# imagenet_labels_filename = "Data/imagenet_class_index.json"
-# with open(imagenet_labels_filename) as f:
-#     CLASS_INDEX = json.load(f)
-#
-# classlabel = []
-# for i in range(CLASS_INDEX.__len__()):
-#     classlabel.append(CLASS_INDEX[str(i)][1])
-# classes = np.array(classlabel)
 
 num_classes = len(classes)
 
@@ -114,8 +78,6 @@ num_classes = len(classes)
 # with open(model_json, 'r') as f:
 #    model_trained = model_from_json(f.read())
 
-
-
 model_trained = inception_resnet_v2.InceptionResNetV2(include_top=False, weights='imagenet',input_tensor=None, input_shape=(img_width, img_height, 3))
 x = model_trained.output
 x = GlobalAveragePooling2D()(x) # before dense layer
@@ -126,7 +88,6 @@ model_trained = Model(inputs=model_trained.input, outputs=predictions_new)
 # Load weights into the new model
 model_trained.load_weights(trainedweights_name)
 
-# model_final = multi_gpu_model(model_final, gpus=2, cpu_merge=True, cpu_relocation=False)
 
 
 def onlyfolders(path):
@@ -149,7 +110,6 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 foldernames = os.listdir(photo_path_base)
 
-# f_idx = 0
 
 for f_idx in range(0, len(foldernames)):
 
@@ -250,7 +210,6 @@ for f_idx in range(0, len(foldernames)):
         def foo_get_predicted_filename(x, x2):
             return (out_path + "/" + "" + foldername + "/" + x)
             #return (out_path + "Result/" + "ClassifiedPhotos/" + "/" + x + "/2ndClass_" +x2 )
-
 
         predicted_filenames = list(map(foo_get_predicted_filename, predicted_class_v, predicted_class_top2_v))
         save_folder_names = list(map(os.path.basename, predicted_filenames))
